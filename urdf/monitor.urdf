@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="monitor">
+  
+  <link name="world">
+  </link>
+
+  <link name="monitor">
+    <visual>
+      <geometry>
+        <mesh scale="0.001 0.001 0.001" filename="package://mara_description/meshes/monitor.stl"/>
+      </geometry>
+      <material name="orange"/> 
+    </visual>
+    <collision>
+      <geometry>
+        <mesh scale="0.001 0.001 0.001" filename="package://mara_description/meshes/monitor.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0" />
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0" />
+    </inertial>
+  </link>
+
+  <joint name="world" type="fixed">
+    <axis xyz="1 0 0"/>
+    <origin rpy="1.57 0 3.14" xyz="0 0 0"/>
+    <parent link="world"/>
+    <child link="monitor"/>
+  </joint>
+
+</robot>
