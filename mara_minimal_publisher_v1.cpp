@@ -3,13 +3,19 @@
 #include "hrim_actuator_rotaryservo_msgs/msg/goal_rotary_servo.hpp"
 #include "hrim_actuator_rotaryservo_msgs/msg/state_rotary_servo.hpp"
 #include "std_msgs/msg/int16.hpp"
-
+#include "rclcpp/clock.hpp"
+#include "rclcpp/time.hpp"
+#include "iostream"
+#include "fstream"
 
 int object_id=0;
+int previous_object_id=0;
 int switch_value = 0;
 float object_position=0;
 float position_axis_1 = 0;
 float position_axis_2 = 0;
+float position_axis_3 = 0;
+float position_axis_4 = 0;
 float position_angle = 0;
 
 void msgCallback(const std_msgs::msg::Int16::SharedPtr msg)
@@ -21,14 +27,35 @@ void msgCallback(const std_msgs::msg::Int16::SharedPtr msg)
 
 void minimal_callback1(const hrim_actuator_rotaryservo_msgs::msg::StateRotaryServo::UniquePtr msg)
 {
+  std::ofstream ofile("data.txt", std::ios::app);
+  
   //std::cout << "Position1: " << msg->position << std::endl;
   position_axis_1 = msg->position;
+  
+  std::cout<<"check the time shift : " << rclcpp::Clock(RCL_ROS_TIME).now().nanoseconds() << std::endl;
+  if(ofile.is_open()){
+      ofile<<rclcpp::Clock(RCL_ROS_TIME).now().nanoseconds()<<std::endl;
+      ofile.close();
+  }
+  
 }
 
 void minimal_callback2(const hrim_actuator_rotaryservo_msgs::msg::StateRotaryServo::UniquePtr msg)
 {
   //std::cout << "Position2: " << msg->position << std::endl;
   position_axis_2 = msg->position;
+}
+
+void minimal_callback3(const hrim_actuator_rotaryservo_msgs::msg::StateRotaryServo::UniquePtr msg)
+{
+  //std::cout << "Position2: " << msg->position << std::endl;
+  position_axis_3 = msg->position;
+}
+
+void minimal_callback4(const hrim_actuator_rotaryservo_msgs::msg::StateRotaryServo::UniquePtr msg)
+{
+  //std::cout << "Position2: " << msg->position << std::endl;
+  position_axis_4 = msg->position;
 }
 
 int main(int argc, char * argv[])
@@ -42,6 +69,10 @@ int main(int argc, char * argv[])
   auto pub1 = node->create_publisher<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>("/hrim_actuator_rotaryservo_000000000001/goal_axis1", rclcpp::SensorDataQoS());
 
   auto pub2 = node->create_publisher<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>("/hrim_actuator_rotaryservo_000000000001/goal_axis2", rclcpp::SensorDataQoS());
+  
+  auto pub3 = node->create_publisher<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>("/hrim_actuator_rotaryservo_000000000002/goal_axis1", rclcpp::SensorDataQoS());
+  
+  auto pub4 = node->create_publisher<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>("/hrim_actuator_rotaryservo_000000000003/goal_axis1", rclcpp::SensorDataQoS());
 
   // Publishing rate of 1 Hzposition_axis_1
   rclcpp::WallRate loop_rate(1);
@@ -49,6 +80,8 @@ int main(int argc, char * argv[])
   // Create message with the same type as the topic, <hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>.
   auto msg_axis_1 = std::make_shared<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>();
   auto msg_axis_2 = std::make_shared<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>();
+  auto msg_axis_3 = std::make_shared<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>();
+  auto msg_axis_4 = std::make_shared<hrim_actuator_rotaryservo_msgs::msg::GoalRotaryServo>();  
   // Desired position in degrees
 
   
@@ -66,6 +99,16 @@ int main(int argc, char * argv[])
     "/hrim_actuator_rotaryservo_000000000001/state_axis2",
     rclcpp::SensorDataQoS(), // QoS profile for reading (joint) sensors
     minimal_callback2);
+  
+  auto sub3 = node->create_subscription<hrim_actuator_rotaryservo_msgs::msg::StateRotaryServo>(
+    "/hrim_actuator_rotaryservo_000000000002/state_axis1",
+    rclcpp::SensorDataQoS(), // QoS profile for reading (joint) sensors
+    minimal_callback3);  
+
+  auto sub4 = node->create_subscription<hrim_actuator_rotaryservo_msgs::msg::StateRotaryServo>(
+    "/hrim_actuator_rotaryservo_000000000003/state_axis1",
+    rclcpp::SensorDataQoS(), // QoS profile for reading (joint) sensors
+    minimal_callback4);    
 
   // Loop for axis 2 90 degree rotation ( x - axis rotation )
 
@@ -73,15 +116,34 @@ int main(int argc, char * argv[])
   while (rclcpp::ok()) {
     // Fill message content
     
-    msg_axis_1->position = 90 * 3.1416/180.0; // Position to rads
-    msg_axis_1->velocity = 0.4; // Velocity in rads/s
-    msg_axis_1->control_type = 4; // Position and velocity control
 
-    printf("axis1 value setting fin.\n");
     if(switch_value == 0)
     {
+      msg_axis_1->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+        // actuator 1 origin position define
+        
+      msg_axis_2->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_2->velocity = 0.4; // Velocity in rads/s
+      msg_axis_2->control_type = 4; // Position and velocity control
+        // actuator 2 origin position define
+        
+      msg_axis_3->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.4; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+        
+      msg_axis_4->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.4; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+        // actuator 3 origin position define
+        
+      printf("origin value setting fin.\n");        
       pub1->publish(*msg_axis_1);
-      if(std::abs(position_axis_1 - msg_axis_1->position) < 0.01)
+      pub2->publish(*msg_axis_2);
+      pub3->publish(*msg_axis_3);
+      pub4->publish(*msg_axis_4);
+      if((std::abs(position_axis_1 - msg_axis_1->position) < 0.1) && (std::abs(position_axis_2 - msg_axis_2->position) < 0.1) && (std::abs(position_axis_3 - msg_axis_3->position) < 0.1) && (std::abs(position_axis_4 - msg_axis_4->position) < 0.1))
       {
         
         switch_value = 1;
@@ -90,55 +152,188 @@ int main(int argc, char * argv[])
 
     }
     if(switch_value == 1)
-    printf("axis1 move fin.\n");
-    rclcpp::spin_some(node);
+    printf("back to the origin fin.\n");
+    printf("collect object_id start.\n");
+    
+    
+    
     if(switch_value == 1){
-    if(object_id == 15) //dog
+    if(object_id == 16) //dog
     {
-      object_position = 270;
-      switch_value = 2;
-      msg_axis_2->position = object_position * 3.1416/180.0; // Position to rads
+      if(previous_object_id == 16)
+      {
+          
+        
+      msg_axis_1->position = 45 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+      
+      msg_axis_2->position = -90 * 3.1416/180.0; // Position to rads
+      msg_axis_2->velocity = 0.6; // Velocity in rads/s
+      msg_axis_2->control_type = 4; // Position and velocity control
+      
+      msg_axis_3->position = -80 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.1; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+      
+      msg_axis_4->position = 30 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.1; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+      }
+      
+      else
+      {
+      msg_axis_1->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+        // actuator 1 origin position define
+        
+      msg_axis_2->position = -90 * 3.1416/180.0; // Position to rads
       msg_axis_2->velocity = 0.4; // Velocity in rads/s
       msg_axis_2->control_type = 4; // Position and velocity control
+        // actuator 2 origin position define
+        
+      msg_axis_3->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.4; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+        
+      msg_axis_4->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.4; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+        // actuator 3 origin position define      
+          
+      }
+      
+      
+      
+      switch_value = 2;
+      
 
+      previous_object_id = 16;
     }
 
     else if(object_id == 14) //bird
     {
-      object_position = 90;
-      switch_value = 2;
-      msg_axis_2->position = object_position * 3.1416/180.0; // Position to rads
+      
+      if(previous_object_id == 14)
+      {
+          
+        
+      msg_axis_1->position = 45 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+      
+      msg_axis_2->position = 90 * 3.1416/180.0; // Position to rads
+      msg_axis_2->velocity = 0.6; // Velocity in rads/s
+      msg_axis_2->control_type = 4; // Position and velocity control
+      
+      msg_axis_3->position = -80 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.2; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+      
+      msg_axis_4->position = 30 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.1; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+      }
+      
+      else
+      {
+      msg_axis_1->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+        // actuator 1 origin position define
+        
+      msg_axis_2->position = 90 * 3.1416/180.0; // Position to rads
       msg_axis_2->velocity = 0.4; // Velocity in rads/s
       msg_axis_2->control_type = 4; // Position and velocity control
+        // actuator 2 origin position define
+        
+      msg_axis_3->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.4; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+        
+      msg_axis_4->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.4; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+        // actuator 3 origin position define      
+          
+      }   
+      switch_value = 2;
+      
+      previous_object_id = 14;
     }
 
     else if(object_id == 62) //TV monitor
     {
-      object_position = 180;
-      switch_value = 2;
-      msg_axis_2->position = object_position * 3.1416/180.0; // Position to rads
+
+      if(previous_object_id == 62)
+      {
+          
+        
+      msg_axis_1->position = 45 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+      
+      msg_axis_2->position = 180 * 3.1416/180.0; // Position to rads
+      msg_axis_2->velocity = 0.6; // Velocity in rads/s
+      msg_axis_2->control_type = 4; // Position and velocity control
+      
+      msg_axis_3->position = -80 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.2; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+      
+      msg_axis_4->position = 30 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.1; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+      }
+      
+      else
+      {
+      msg_axis_1->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_1->velocity = 0.4; // Velocity in rads/s
+      msg_axis_1->control_type = 4; // Position and velocity control
+        // actuator 1 origin position define
+        
+      msg_axis_2->position = 180 * 3.1416/180.0; // Position to rads
       msg_axis_2->velocity = 0.4; // Velocity in rads/s
       msg_axis_2->control_type = 4; // Position and velocity control
+        // actuator 2 origin position define
+        
+      msg_axis_3->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_3->velocity = 0.4; // Velocity in rads/s
+      msg_axis_3->control_type = 4; // Position and velocity control
+        
+      msg_axis_4->position = 0 * 3.1416/180.0; // Position to rads
+      msg_axis_4->velocity = 0.4; // Velocity in rads/s
+      msg_axis_4->control_type = 4; // Position and velocity control
+        // actuator 3 origin position define      
+          
+      } 
+      switch_value = 2;
+      
+      previous_object_id = 62;
     }
-
-    else
-    {
-      switch_value=1;
     }
-    }
+    
     if(switch_value == 2){
-      printf("axis2 value setting fin.");
-      pub2->publish(*msg_axis_2);
-      if ((std::abs(position_axis_2 - msg_axis_2->position) < 0.01))
+ 
+      if((std::abs(position_axis_1 - msg_axis_1->position) < 1) && (std::abs(position_axis_2 - msg_axis_2->position) < 1) && (std::abs(position_axis_3 - msg_axis_3->position) < 1) && (std::abs(position_axis_4 - msg_axis_4->position) < 1))
       {
-        printf("axis2 move fin.");
+        printf("object choosing action fin.");
+
         switch_value = 1;
       }
+      pub1->publish(*msg_axis_1);
+      pub2->publish(*msg_axis_2);
+      pub3->publish(*msg_axis_3);
+      pub4->publish(*msg_axis_4); 
     }
-
-    // Publish message!
+    
+    
+            
+            // Publish message!
     // Spin not really needed here since we don't have callbacks
-
+    rclcpp::spin_some(node);
 
     // Sleep to mantain the 1 Hz publishing rate
     loop_rate.sleep();
